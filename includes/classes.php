@@ -298,14 +298,76 @@
 
 			$query .= "INSERT INTO oc_product_to_store SET product_id = '{$product_id}', store_id = '0';";
 
-			// check if it's a subproduct or if we have options for the product
+			/*
+			check if it's a subproduct or if we have options for the product
+			the particular LoadedCommerce setup I'm working with had this coded into it (sub_products)
+			and it was done in the shittiest way possible
+			*/
 			if (isset($product["products_parent_id"]) || isset($product["options_id"])) {
-				$query .= "INSERT INTO oc_product_option SET product_id = '51', option_id = '11', required = '1';";
+				/*
+				option_id is based off of your OpenCart setting
+				Catalog->Options->Selection Option Name Click edit, look @ URL &option_id=11
+				(in my setup it's Size, this suits my needs)
+				*/
+				$query .= "INSERT INTO oc_product_option SET product_id = '{$product_id}', option_id = '11', required = '1';";
 
-				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '51', option_id = '11', option_value_id = '48', quantity = '99', subtract = '1', price = '1', price_prefix = '+', points = '0', points_prefix = '+', weight = '2', weight_prefix = '+';";
+				// product_option_value_id = auto_incrementing
+				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '{$product_id}', option_id = '11', option_value_id = '48', quantity = '99', subtract = '1', price = '1', price_prefix = '+', points = '0', points_prefix = '+', weight = '2', weight_prefix = '+';";
 
-				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '51', option_id = '11', option_value_id = '47', quantity = '99', subtract = '1', price = '2', price_prefix = '+', points = '0', points_prefix = '+', weight = '3', weight_prefix = '+';";
+				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '{$product_id}', option_id = '11', option_value_id = '47', quantity = '99', subtract = '1', price = '2', price_prefix = '+', points = '0', points_prefix = '+', weight = '3', weight_prefix = '+';";
 			}
+
+			$retail_prices =
+			array(
+				$product["products_price1_qty"] => $product["products_price1"], // <= 10 products
+				$product["products_price2_qty"] => $product["products_price2"], // <= 20 products
+				$product["products_price3_qty"] => $product["products_price3"], // <= 30 etc..
+				$product["products_price4_qty"] => $product["products_price4"],
+				$product["products_price5_qty"] => $product["products_price5"],
+				$product["products_price6_qty"] => $product["products_price6"],
+				$product["products_price7_qty"] => $product["products_price7"],
+				$product["products_price8_qty"] => $product["products_price8"],
+				$product["products_price9_qty"] => $product["products_price9"],
+				$product["products_price10_qty"] => $product["products_price10"],
+				$product["products_price11_qty"] => $product["products_price11"]
+			);
+
+			$wholesale_prices =
+			array(
+				$product["products_price1_qty"] => $product["customers_group_price1"], // <= 10 products
+				$product["products_price2_qty"] => $product["customers_group_price2"], // <= 20 products
+				$product["products_price3_qty"] => $product["customers_group_price3"], // <= 30 etc..
+				$product["products_price4_qty"] => $product["customers_group_price4"],
+				$product["products_price5_qty"] => $product["customers_group_price5"],
+				$product["products_price6_qty"] => $product["customers_group_price6"],
+				$product["products_price7_qty"] => $product["customers_group_price7"],
+				$product["products_price8_qty"] => $product["customers_group_price8"],
+				$product["products_price9_qty"] => $product["customers_group_price9"],
+				$product["products_price10_qty"] => $product["customers_group_price10"],
+				$product["products_price11_qty"] => $product["customers_group_price11"]
+			);
+
+			/* quantity and or wholesaler discounts
+			$customer_group = "2"; //wholesale
+			$customer_group = "1"; //retail
+			*/
+			foreach ($retail_prices as $qty => $price) {
+				$query .= "INSERT INTO oc_product_discount SET product_id = '{$product_id}', customer_group_id = '1', quantity = '{$qty}', priority = '1', price = '{$price}', date_start = '', date_end = '';";
+			}
+
+			foreach ($wholesale_prices as $qty => $price) {
+				$query .= "INSERT INTO oc_product_discount SET product_id = '{$product_id}', customer_group_id = '2', quantity = '{$qty}', priority = '1', price = '{$price}', date_start = '', date_end = '';";
+			}
+
+			// for products linked to mutliple categories see: http://stackoverflow.com/questions/2499250/how-to-display-result-of-subquery-rows-as-one-column-in-mysql
+			$query .= "INSERT INTO oc_product_to_category SET product_id = '{$product_id}', category_id = '61';";
+
+			$query .= "INSERT INTO oc_product_to_layout SET product_id = '{$product_id}', store_id = '0', layout_id = '0';"
+
+			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"]));
+
+			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = 'seo-url-for-product';";
+			mysqli_multi_query($this->dbCon, $query);
 
 	    }
 	}
