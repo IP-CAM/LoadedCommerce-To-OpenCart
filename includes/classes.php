@@ -280,6 +280,7 @@
 				var_dump($query);
 				var_dump(mysqli_error($this->dbCon));
 			}
+			mysqli_query($this->dbCon, $query);
 
 			// we'll need the auto-incremented insert ID for the rest of this query
 			$product_id = $this->dbCon->insert_id;
