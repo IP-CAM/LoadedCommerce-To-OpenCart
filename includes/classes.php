@@ -212,8 +212,7 @@
 				layout_id = '0';";
 				mysqli_query($this->dbCon, $query);
 
-				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', $category["categories_name"]);
-				$seo_URL = trim(strtolower($seo_URL), '-');
+				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])), "-");
 
 				$query = "INSERT INTO oc_url_alias SET query = 'category_id=" . $cat_insert_id . "', keyword = '" . $seo_URL . "';";
 				mysqli_query($this->dbCon, $query);
@@ -255,8 +254,7 @@
 				layout_id = '0';";
 				mysqli_query($this->dbCon, $query);
 
-				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', $category["categories_name"]);
-				$seo_URL = trim(strtolower($seo_URL), '-');
+				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])), "-");
 
 				$query = "INSERT INTO oc_url_alias SET query = 'category_id=" . $cat_insert_id . "', keyword = '" . $seo_URL . "';";
 				mysqli_query($this->dbCon, $query);
@@ -264,10 +262,6 @@
 	    }
 
 	    function AddProduct($product) { /*just pass the whole array fsck all those arguments*/
-			/*
-			keys in product array
-			"products_id"	"products_quantity"	"products_model"	"products_image"	"products_image_med"	"products_image_lrg"	"products_image_sm_1"	"products_image_xl_1"	"products_image_sm_2"	"products_image_xl_2"	"products_image_sm_3"	"products_image_xl_3"	"products_image_sm_4"	"products_image_xl_4"	"products_image_sm_5"	"products_image_xl_5"	"products_image_sm_6"	"products_image_xl_6"	"products_price"	"products_cost"	"products_msrp"	"products_date_added"	"products_last_modified"	"products_date_available"	"products_weight"	"products_status"	"products_tax_class_id"	"manufacturers_id"	"products_ordered"	"products_parent_id"	"products_price1"	"products_price2"	"products_price3"	"products_price4"	"products_price5"	"products_price6"	"products_price7"	"products_price8"	"products_price9"	"products_price10"	"products_price11"	"products_price1_qty"	"products_price2_qty"	"products_price3_qty"	"products_price4_qty"	"products_price5_qty"	"products_price6_qty"	"products_price7_qty"	"products_price8_qty"	"products_price9_qty"	"products_price10_qty"	"products_price11_qty"	"products_qty_blocks"	"products_group_access"	"products_nav_access"	"sort_order"	"vendors_id"	"vendors_product_price"	"vendors_prod_id"	"vendors_prod_comments"	"products_qty_days"	"products_qty_years"	"parent_model"	"products_quantity_order_min"	"products_strict_inventory"	"products_text_for_madetoorder"	"products_text_for_outofstock"	"products_text_for_upc"	"customers_group_id"	"customers_group_price"	"customers_group_cost"	"customers_group_msrp"	"customers_group_price1"	"customers_group_price2"	"customers_group_price3"	"customers_group_price4"	"customers_group_price5"	"customers_group_price6"	"customers_group_price7"	"customers_group_price8"	"customers_group_price9"	"customers_group_price10"	"customers_group_price11"	"products_id"	"products_id"	"language_id"	"products_name"	"products_blurb"	"products_description"	"products_sizing"	"products_shipping"	"products_url"	"products_viewed"	"products_head_title_tag"	"products_head_desc_tag"	"products_head_keywords_tag"	"products_inv_name"	"products_seo_url"	"products_id"	"categories_id"	"products_attributes_id"	"products_id"	"options_id"	"options_values_id"	"options_values_price"	"price_prefix"	"products_options_sort_order"	"products_options_values_id"	"language_id"	"products_options_values_name"	"options_values_price"
-			*/
 
 			// TAX RATE
 			if ($product["products_tax_class_id"] == "2") { //apply the 7% tax rate
