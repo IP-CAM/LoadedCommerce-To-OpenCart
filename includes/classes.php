@@ -10,25 +10,22 @@
 	    }
 
 	    function GetCustomers() {
-			$query = "
-					SELECT
+			$query = "SELECT
+			tbl1.customers_id,tbl1.purchased_without_account,tbl1.customers_gender,tbl1.customers_firstname,tbl1.customers_lastname,
+			tbl1.customers_dob,tbl1.customers_email_address,tbl1.customers_default_address_id,tbl1.customers_password,tbl1.customers_newsletter,
+			tbl1.customers_selected_template,tbl1.customers_group_id,tbl1.customers_access_group_id,tbl1.customers_group_ra,
+			tbl1.customers_payment_allowed,tbl1.customers_shipment_allowed,tbl1.customers_validation_code,tbl1.customers_validation,
+			tbl1.customers_email_registered,tbl1.customers_account_approval,tbl1.customers_telephone,tbl1.customers_fax,
+			tbl1.business_description,tbl1.business_age,tbl1.business_type,tbl1.business_products,tbl1.business_referred,
+			tbl1.business_contact,tbl1.newsletter,tbl1.catalog_print,tbl1.catalog_pdf, tbl2.address_book_id,tbl2.customers_id,
+			tbl2.entry_gender,tbl2.entry_company,tbl2.entry_company_tax_id,tbl2.entry_firstname,tbl2.entry_lastname,tbl2.entry_street_address,
+			tbl2.entry_suburb,tbl2.entry_postcode,tbl2.entry_city,tbl2.entry_state,tbl2.entry_country_id,tbl2.entry_zone_id,tbl2.entry_telephone,
+			tbl2.entry_fax,tbl2.entry_email_address, tbl3.customers_info_id, tbl3.customers_info_date_account_created
 
-					tbl1.customers_id,tbl1.purchased_without_account,tbl1.customers_gender,tbl1.customers_firstname,tbl1.customers_lastname,
-					tbl1.customers_dob,tbl1.customers_email_address,tbl1.customers_default_address_id,tbl1.customers_password,tbl1.customers_newsletter,
-					tbl1.customers_selected_template,tbl1.customers_group_id,tbl1.customers_access_group_id,tbl1.customers_group_ra,
-					tbl1.customers_payment_allowed,tbl1.customers_shipment_allowed,tbl1.customers_validation_code,tbl1.customers_validation,
-					tbl1.customers_email_registered,tbl1.customers_account_approval,tbl1.customers_telephone,tbl1.customers_fax,
-					tbl1.business_description,tbl1.business_age,tbl1.business_type,tbl1.business_products,tbl1.business_referred,
-					tbl1.business_contact,tbl1.newsletter,tbl1.catalog_print,tbl1.catalog_pdf, tbl2.address_book_id,tbl2.customers_id,
-					tbl2.entry_gender,tbl2.entry_company,tbl2.entry_company_tax_id,tbl2.entry_firstname,tbl2.entry_lastname,tbl2.entry_street_address,
-					tbl2.entry_suburb,tbl2.entry_postcode,tbl2.entry_city,tbl2.entry_state,tbl2.entry_country_id,tbl2.entry_zone_id,tbl2.entry_telephone,
-					tbl2.entry_fax,tbl2.entry_email_address, tbl3.customers_info_id, tbl3.customers_info_date_account_created
-
-					FROM customers tbl1, address_book tbl2, customers_info tbl3
-					WHERE tbl1.customers_id = tbl2.customers_id AND tbl1.customers_id = tbl3.customers_info_id AND tbl1.customers_email_address <> ''
-					GROUP BY tbl1.customers_email_address
-					ORDER BY tbl3.customers_info_date_account_created DESC
-			";
+			FROM customers tbl1, address_book tbl2, customers_info tbl3
+			WHERE tbl1.customers_id = tbl2.customers_id AND tbl1.customers_id = tbl3.customers_info_id AND tbl1.customers_email_address <> ''
+			GROUP BY tbl1.customers_email_address
+			ORDER BY tbl3.customers_info_date_account_created DESC";
 
 	    	$customers = mysqli_query($this->dbCon, $query);
 
@@ -52,20 +49,16 @@
 	    }
 
 	    function GetProducts() {
-			$query = "
-			SELECT * FROM products
-			JOIN products_groups
-			ON products.products_id = products_groups.products_id
-			JOIN products_description
-			ON products.products_id = products_description.products_id
-			LEFT JOIN products_to_categories
-			ON products.products_id = products_to_categories.products_id
-			LEFT JOIN products_attributes
-			ON products.products_id = products_attributes.products_id
-			LEFT JOIN products_options_values
-			ON products_attributes.options_values_id = products_options_values.products_options_values_id
-			ORDER BY products_parent_id ASC
-			";
+			$query = "SELECT *, (SELECT GROUP_CONCAT(categories_id) FROM products_to_categories WHERE products_id = products.products_id) FROM products
+					JOIN products_groups
+					ON products.products_id = products_groups.products_id
+					JOIN products_description
+					ON products.products_id = products_description.products_id
+					LEFT JOIN products_attributes
+					ON products.products_id = products_attributes.products_id
+					LEFT JOIN products_options_values
+					ON products_attributes.options_values_id = products_options_values.products_options_values_id
+					ORDER BY products_parent_id ASC";
 
 			$products = mysqli_query($this->dbCon, $query);
 
