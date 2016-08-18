@@ -362,6 +362,12 @@
 
 			$query .= "INSERT INTO oc_product_to_layout SET product_id = '{$product_id}', store_id = '0', layout_id = '0';";
 
+			/*
+			vagrant@sunshinejoy:/var/www/LoadedCommerce-To-OpenCart$ php -r 'echo "\n\n" . preg_replace("/[^a-zA-Z0-9]+/", "-", trim(strtolower("test product-d2Name"))) . "\n\n";'
+
+
+			test-product-d2name
+			*/
 			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"])));
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = 'seo-url-for-product';";
