@@ -274,13 +274,17 @@
 
 			$query = "INSERT INTO oc_product SET model = '{$product["products_model"]}', sku = '', upc = '{$product["products_text_for_upc"]}', ean = '', jan = '', isbn = '', mpn = '', location = '', quantity = '{$product["products_quantity"]}', minimum = '{$product["products_quantity_order_min"]}', subtract = '1', stock_status_id = '6', date_available = '2016-08-08', manufacturer_id = '0', shipping = '1', price = '{$product["products_price"]}', points = '0', weight = '{$product["products_weight"]}', weight_class_id = '5', length = '', width = '', height = '', length_class_id = '3', status = '1', tax_class_id = '{$oc_tax_class_id}', sort_order = '', date_added = NOW()";
 
-			$result = mysqli_query($this->dbCon, $query);
-
-			if ($result === FALSE) {
-				var_dump($query);
-				var_dump(mysqli_error($this->dbCon));
+			// we only want to insert a parent product if it is in fact a parent product
+			if ($product["products_parent_id"] === "0" || !isset($product["products_parent_id"]) && !isset($product["options_id"])) {
+				mysqli_query($this->dbCon, $query);
+			} else {
+				// dump all the sub-products/options to one place to analyze
+				ob_start();
+				var_dump($product);
+				echo "-------------------\n";
+				$result = ob_get_clean();
+				file_put_contents("/var/www/LoadedCommerce-To-OpenCart/sub-products.txt", $result, FILE_APPEND);
 			}
-			mysqli_query($this->dbCon, $query);
 
 			// we'll need the auto-incremented insert ID for the rest of this query
 			$product_id = $this->dbCon->insert_id;
@@ -370,10 +374,9 @@
 			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"])));
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = 'seo-url-for-product';";
+			
 			mysqli_multi_query($this->dbCon, $query);
-
 			while(mysqli_next_result($this->dbCon)){;} // flush multiqueries - http://stackoverflow.com/questions/27899598/mysqli-multi-query-commands-out-of-sync-you-cant-run-this-command-now
-
 	    }
 	}
 ?>
