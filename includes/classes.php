@@ -49,7 +49,7 @@
 	    }
 
 	    function GetProducts() {
-			$query = "SELECT *, (SELECT GROUP_CONCAT(categories_id) FROM products_to_categories WHERE products_id = products.products_id) FROM products
+			$query = "SELECT *, (SELECT GROUP_CONCAT(categories_id) FROM products_to_categories WHERE products_id = products.products_id) as ProductCategories FROM products
 					JOIN products_groups
 					ON products.products_id = products_groups.products_id
 					JOIN products_description
@@ -352,15 +352,20 @@
 				$query .= "INSERT INTO oc_product_discount SET product_id = '{$product_id}', customer_group_id = '2', quantity = '{$qty}', priority = '1', price = '{$price}', date_start = '', date_end = '';";
 			}
 
-			// for products linked to mutliple categories see: http://stackoverflow.com/questions/2499250/how-to-display-result-of-subquery-rows-as-one-column-in-mysql
-			$query .= "INSERT INTO oc_product_to_category SET product_id = '{$product_id}', category_id = '61';";
+			
+			// Now that we have a Group_Concat for the product categories, link them badboys ups
+			$product_categories = explode(",", $product["ProductCategories"]);
 
-			$query .= "INSERT INTO oc_product_to_layout SET product_id = '{$product_id}', store_id = '0', layout_id = '0';"
+			foreach ($product_categories as $cat_id) {
+				$query .= "INSERT INTO oc_product_to_category SET product_id = '{$product_id}', category_id = '{$cat_id}';";
+			}
 
-			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"]));
+			$query .= "INSERT INTO oc_product_to_layout SET product_id = '{$product_id}', store_id = '0', layout_id = '0';";
+
+			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"])));
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = 'seo-url-for-product';";
-			mysqli_multi_query($this->dbCon, $query);
+			// mysqli_multi_query($this->dbCon, $query);
 
 	    }
 	}
