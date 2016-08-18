@@ -262,7 +262,6 @@
 	    }
 
 	    function AddProduct($product) { /*just pass the whole array fsck all those arguments*/
-
 			// TAX RATE
 			if ($product["products_tax_class_id"] == "2") { //apply the 7% tax rate
 				$oc_tax_class_id = "11"; //check this on migration because may change on production server
@@ -273,8 +272,14 @@
 			// CLEANUP DESCRIPTION BECAUSE THEY'RE A MESS
 			$product_description = strip_tags($product["products_description"]);
 
-			$query = "INSERT INTO oc_product SET model = '{$product["products_model"]}', sku = '', upc = '{$product["products_text_for_upc"]}', ean = '', jan = '', isbn = '', mpn = 'mpn', location = '', quantity = '{$product["products_quantity"]}', minimum = '{$product["products_quantity_order_min"]}', subtract = '1', stock_status_id = '6', date_available = '2016-08-08', manufacturer_id = '0', shipping = '1', price = '{$product["products_price"]}', points = '0', weight = '{$product["products_weight"]}', weight_class_id = '5', length = '', width = '', height = '', length_class_id = '3', status = '1', tax_class_id = '{$oc_tax_class_id}', sort_order = '', date_added = NOW()";
-			mysqli_query($this->dbCon, $query);
+			$query = "INSERT INTO oc_product SET model = '{$product["products_model"]}', sku = '', upc = '{$product["products_text_for_upc"]}', ean = '', jan = '', isbn = '', mpn = '', location = '', quantity = '{$product["products_quantity"]}', minimum = '{$product["products_quantity_order_min"]}', subtract = '1', stock_status_id = '6', date_available = '2016-08-08', manufacturer_id = '0', shipping = '1', price = '{$product["products_price"]}', points = '0', weight = '{$product["products_weight"]}', weight_class_id = '5', length = '', width = '', height = '', length_class_id = '3', status = '1', tax_class_id = '{$oc_tax_class_id}', sort_order = '', date_added = NOW()";
+
+			$result = mysqli_query($this->dbCon, $query);
+
+			if ($result === FALSE) {
+				var_dump($query);
+				var_dump(mysqli_error($this->dbCon));
+			}
 
 			// we'll need the auto-incremented insert ID for the rest of this query
 			$product_id = $this->dbCon->insert_id;
@@ -290,7 +295,7 @@
 			the particular LoadedCommerce setup I'm working with had this coded into it (sub_products)
 			and it was done in the shittiest way possible
 			*/
-			if (isset($product["products_parent_id"]) || isset($product["options_id"])) {
+			if (isset($product["products_parent_id"]) || isset($product["options_id"]) || isset($product["parent_model"])) {
 				/*
 				option_id is based off of your OpenCart setting
 				Catalog->Options->Selection Option Name Click edit, look @ URL &option_id=11
@@ -301,7 +306,6 @@
 				// product_option_value_id = auto_incrementing
 				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '{$product_id}', option_id = '11', option_value_id = '48', quantity = '99', subtract = '1', price = '1', price_prefix = '+', points = '0', points_prefix = '+', weight = '2', weight_prefix = '+';";
 
-				$query .= "INSERT INTO oc_product_option_value SET product_option_id = '228', product_id = '{$product_id}', option_id = '11', option_value_id = '47', quantity = '99', subtract = '1', price = '2', price_prefix = '+', points = '0', points_prefix = '+', weight = '3', weight_prefix = '+';";
 			}
 
 			$retail_prices =
@@ -365,7 +369,9 @@
 			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"])));
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = 'seo-url-for-product';";
-			// mysqli_multi_query($this->dbCon, $query);
+			mysqli_multi_query($this->dbCon, $query);
+
+			while(mysqli_next_result($this->dbCon)){;} // flush multiqueries - http://stackoverflow.com/questions/27899598/mysqli-multi-query-commands-out-of-sync-you-cant-run-this-command-now
 
 	    }
 	}
