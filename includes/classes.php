@@ -306,16 +306,34 @@
 
 				echo "sub product:\n{$product["products_name"]}\n";
 				/*
-				option_id is based off of your OpenCart setting
+				option_id is based off of your OpenCart setting / '11' is Sizes (for me)
 				Catalog->Options->Selection Option Name Click edit, look @ URL &option_id=11
 				(in my setup it's Size, this suits my needs)
 				*/
+
+				// CREATE sub option values
+				$query = "INSERT INTO oc_option_value SET option_id = '11', image = '{$product["products_image"]}', sort_order = '0';";
+				mysqli_query($this->dbCon, $query);
+				$option_vale_insert_id = $this->dbCon->insert_id;
+
+				$query = "INSERT INTO oc_option_value_description SET option_value_id = '{$option_vale_insert_id}', language_id = '1', option_id = '11', name = '{$product["products_name"]}';";
+				mysqli_query($this->dbCon, $query);
+
 				$query = "INSERT INTO oc_product_option SET product_id = '{$product_id}', option_id = '11', required = '1';";
 				mysqli_query($this->dbCon, $query);
 
 				$option_insert_id = $this->dbCon->insert_id;
+
+				if (isset($products["options_values_price"])) {
+					// has option price
+					$option_price = $products["options_values_price"];
+				} else {
+					// is subproduct so get main price
+					$option_price = $product["products_price"];
+				}
+
 				// product_option_value_id = auto_incrementing
-				$query = "INSERT INTO oc_product_option_value SET product_option_id = '{$option_insert_id}', product_id = '{$product_id}', option_id = '11', option_value_id = '48', quantity = '99', subtract = '1', price = '1', price_prefix = '+', points = '0', points_prefix = '+', weight = '2', weight_prefix = '+';";
+				$query = "INSERT INTO oc_product_option_value SET product_option_id = '{$option_insert_id}', product_id = '{$product_id}', option_id = '11', option_value_id = '{$option_vale_insert_id}', quantity = '{$product["products_quantity"]}', subtract = '1', price = '1', price_prefix = '+', points = '0', points_prefix = '+', weight = '{$product["products_weight"]}', weight_prefix = '+';";
 				mysqli_query($this->dbCon, $query);
 			}
 
