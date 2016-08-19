@@ -114,6 +114,8 @@
 	// OpenCart portion of code (Adding Products, Categories, Transactions, Customers, Categories...)
 	class OCDB {
 		//Make connection on instantioation (that word is hard af to spell)
+		private $Unique_Product_Models = array();
+
 	    function __construct() {
 
 			$this->dbCon = mysqli_connect(constant("OC_HOSTNAME"), constant("OC_USERNAME"), constant("OC_PASSWORD"), constant("OC_DATABASE"));
@@ -261,6 +263,7 @@
 			}
 	    }
 
+	    // OK this is kinda hacky but I don't want to tweak the fucking SQL query again :/
 	    function AddProduct($product) { /*just pass the whole array fsck all those arguments*/
 			// TAX RATE
 			if ($product["products_tax_class_id"] == "2") { //apply the 7% tax rate
@@ -274,11 +277,18 @@
 
 			$query = "INSERT INTO oc_product SET model = '{$product["products_model"]}', sku = '', upc = '{$product["products_text_for_upc"]}', ean = '', jan = '', isbn = '', mpn = '', location = '', quantity = '{$product["products_quantity"]}', minimum = '{$product["products_quantity_order_min"]}', subtract = '1', stock_status_id = '6', date_available = '2016-08-08', manufacturer_id = '0', shipping = '1', price = '{$product["products_price"]}', points = '0', weight = '{$product["products_weight"]}', weight_class_id = '5', length = '', width = '', height = '', length_class_id = '3', status = '1', tax_class_id = '{$oc_tax_class_id}', sort_order = '', date_added = NOW()";
 
-			// we only want to insert a parent product if it is in fact a parent product
-			if ($product["products_parent_id"] === "0" || !isset($product["products_parent_id"])) {
+			// sanity check before adding
+			if ($product["products_parent_id"] === "0" && array_search(trim($product["products_model"]), $this->Unique_Product_Models) === FALSE) {
+
+				// add this model to the array so we don't dupe it
+				$this->Unique_Product_Models[] = trim($product["products_model"]);
 				mysqli_query($this->dbCon, $query);
 				// we'll need the auto-incremented insert ID for the rest of this query
 				$product_id = $this->dbCon->insert_id;
+
+				$tempNum = $GLOBALS["Parent_Products"];
+				$tempNum++;
+				$GLOBALS["Parent_Products"] = $tempNum;
 			} else {
 				$product_id = 0; //shhhh
 			}
@@ -299,17 +309,19 @@
 
 			if (
 					$product["products_parent_id"] !== "0" && // if the parent_id is not 0
-					isset($product["products_parent_id"])  || // AND parent_id is set (in case it's NULL)
-					isset($product["parent_model"]) || // OR the parent_model is set (because their database is a mess)
+					$product["parent_model"] > 0 || // OR the parent_model is set (because their database is a mess)
 					$product["options_id"] === "1" //  OR if the options_id value is set
 				) {
 
-				echo "sub product:\n{$product["products_name"]}\n";
 				/*
 				option_id is based off of your OpenCart setting / '11' is Sizes (for me)
 				Catalog->Options->Selection Option Name Click edit, look @ URL &option_id=11
 				(in my setup it's Size, this suits my needs)
 				*/
+
+				$tempNum = $GLOBALS["Sub_Products"];
+				$tempNum++;
+				$GLOBALS["Sub_Products"] = $tempNum;
 
 				// CREATE sub option values
 				$query = "INSERT INTO oc_option_value SET option_id = '11', image = '{$product["products_image"]}', sort_order = '0';";
