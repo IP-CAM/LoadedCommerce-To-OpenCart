@@ -214,7 +214,7 @@
 				layout_id = '0';";
 				mysqli_query($this->dbCon, $query);
 
-				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])), "-");
+				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])));
 
 				$query = "INSERT INTO oc_url_alias SET query = 'category_id=" . $cat_insert_id . "', keyword = '" . $seo_URL . "';";
 				mysqli_query($this->dbCon, $query);
@@ -256,7 +256,7 @@
 				layout_id = '0';";
 				mysqli_query($this->dbCon, $query);
 
-				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])), "-");
+				$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($category["categories_name"])));
 
 				$query = "INSERT INTO oc_url_alias SET query = 'category_id=" . $cat_insert_id . "', keyword = '" . $seo_URL . "';";
 				mysqli_query($this->dbCon, $query);
@@ -411,7 +411,10 @@
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = '{$seo_URL}';";
 			
-			mysqli_multi_query($this->dbCon, $query);
+			$result = mysqli_multi_query($this->dbCon, $query);
+
+			file_put_contents('/var/www/queries.sql', $query . "\n\n", FILE_APPEND);
+
 			while(mysqli_next_result($this->dbCon)){;} // flush multiqueries - http://stackoverflow.com/questions/27899598/mysqli-multi-query-commands-out-of-sync-you-cant-run-this-command-now
 	    }
 	}
