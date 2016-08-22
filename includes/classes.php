@@ -265,6 +265,9 @@
 
 	    // OK this is kinda hacky but I don't want to tweak the fucking SQL query again :/
 	    function AddProduct($product) { /*just pass the whole array fsck all those arguments*/
+	    	global $Parent_Products;
+	    	global $Sub_Products;
+
 			// TAX RATE
 			if ($product["products_tax_class_id"] == "2") { //apply the 7% tax rate
 				$oc_tax_class_id = "11"; //check this on migration because may change on production server
@@ -278,19 +281,33 @@
 			$query = "INSERT INTO oc_product SET model = '{$product["products_model"]}', sku = '', upc = '{$product["products_text_for_upc"]}', ean = '', jan = '', isbn = '', mpn = '', location = '', quantity = '{$product["products_quantity"]}', minimum = '{$product["products_quantity_order_min"]}', subtract = '1', stock_status_id = '6', date_available = '2016-08-08', manufacturer_id = '0', shipping = '1', price = '{$product["products_price"]}', points = '0', weight = '{$product["products_weight"]}', weight_class_id = '5', length = '', width = '', height = '', length_class_id = '3', status = '1', tax_class_id = '{$oc_tax_class_id}', sort_order = '', date_added = NOW()";
 
 			// sanity check before adding
-			if ($product["products_parent_id"] === "0" && array_search(trim($product["products_model"]), $this->Unique_Product_Models) === FALSE) {
-
-				// add this model to the array so we don't dupe it
-				$this->Unique_Product_Models[] = trim($product["products_model"]);
+			if (
+					$product["products_parent_id"] === "0" && // is parent item
+					array_search(trim($product["products_id"]), $this->Unique_Product_Models) === FALSE // hasn't already been added
+				) {
 				mysqli_query($this->dbCon, $query);
 				// we'll need the auto-incremented insert ID for the rest of this query
 				$product_id = $this->dbCon->insert_id;
 
-				$tempNum = $GLOBALS["Parent_Products"];
-				$tempNum++;
-				$GLOBALS["Parent_Products"] = $tempNum;
+				// add product_id and model to array for no dupes and retrieval of parent ids
+				$this->Unique_Product_Models[trim($product["products_id"])] = //assign details of item to keyed array
+				array('new_product_id'	=> $product_id,
+					  'parent_id'		=> $product["products_parent_id"]);
+				$Parent_Products++;
 			} else {
-				$product_id = 0; //shhhh
+				// this is a sub product so let's retrieve the product_id from the parent item
+				// $product_id = Unique_Product_Models[trim($product["products_model"])]['product_id'];
+				if (!isset($this->Unique_Product_Models[trim($product["products_parent_id"])])) {
+					// orphaned product
+					ob_start();
+					var_dump($product);
+					echo "\n---------------------------";
+					$output = ob_get_clean();
+					file_put_contents("/var/www/LoadedCommerce-To-OpenCart/orphaned-products.txt", $output, FILE_APPEND);
+					continue;
+				} else {
+					$product_id = $this->Unique_Product_Models[trim($product["products_parent_id"])];
+				}
 			}
 
 			$query = "UPDATE oc_product SET image = '{$product["products_image"]}' WHERE product_id = '{$product_id}';";
@@ -319,9 +336,7 @@
 				(in my setup it's Size, this suits my needs)
 				*/
 
-				$tempNum = $GLOBALS["Sub_Products"];
-				$tempNum++;
-				$GLOBALS["Sub_Products"] = $tempNum;
+				$Sub_Products++;
 
 				// CREATE sub option values
 				$query = "INSERT INTO oc_option_value SET option_id = '11', image = '{$product["products_image"]}', sort_order = '0';";
@@ -401,12 +416,6 @@
 
 			$query .= "INSERT INTO oc_product_to_layout SET product_id = '{$product_id}', store_id = '0', layout_id = '0';";
 
-			/*
-			vagrant@sunshinejoy:/var/www/LoadedCommerce-To-OpenCart$ php -r 'echo "\n\n" . preg_replace("/[^a-zA-Z0-9]+/", "-", trim(strtolower("test product-d2Name"))) . "\n\n";'
-
-
-			test-product-d2name
-			*/
 			$seo_URL = preg_replace('/[^a-zA-Z0-9]+/', '-', trim(strtolower($product["products_name"])));
 
 			$query .= "INSERT INTO oc_url_alias SET query = 'product_id={$product_id}', keyword = '{$seo_URL}';";
