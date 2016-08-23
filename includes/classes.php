@@ -283,31 +283,39 @@
 			// sanity check before adding
 			if (
 					$product["products_parent_id"] === "0" && // is parent item
-					array_search(trim($product["products_id"]), $this->Unique_Product_Models) === FALSE // hasn't already been added
+					array_search(trim($product["products_model"]), $this->Unique_Product_Models) === FALSE // hasn't already been added
 				) {
 				mysqli_query($this->dbCon, $query);
 				// we'll need the auto-incremented insert ID for the rest of this query
 				$product_id = $this->dbCon->insert_id;
 
 				// add product_id and model to array for no dupes and retrieval of parent ids
-				$this->Unique_Product_Models[trim($product["products_id"])] = //assign details of item to keyed array
+				$this->Unique_Product_Models[trim($product["products_model"])] = //assign details of item to keyed array
 				array('new_product_id'	=> $product_id,
-					  'parent_id'		=> $product["products_parent_id"]);
+					  'parent_id'		=> $product["parent_model"]);
 				$Parent_Products++;
 			} else {
-				// this is a sub product so let's retrieve the product_id from the parent item
-				// $product_id = Unique_Product_Models[trim($product["products_model"])]['product_id'];
-				if (!isset($this->Unique_Product_Models[trim($product["products_parent_id"])])) {
-					// orphaned product
-					ob_start();
-					var_dump($product);
-					echo "\n---------------------------";
-					$output = ob_get_clean();
-					file_put_contents("/var/www/LoadedCommerce-To-OpenCart/orphaned-products.txt", $output, FILE_APPEND);
-					continue;
+				if ($product["options_id"] !== "1") {
+					//make sure it's not just product options
+					foreach ($this->Unique_Product_Models as $prod_model => $values) {
+						if (strpos($prod_model, $product["products_parent_id"]) !== FALSE) {
+							$product_id = $values["new_product_id"];
+							echo "{$product_id}->" . $product["products_parent_id"] . "->" . $prod_model . "\n";
+						}
+					}
 				} else {
-					$product_id = $this->Unique_Product_Models[trim($product["products_parent_id"])];
+					// it's a product's options
+					$product_id = 0;
 				}
+
+				// ob_start();
+				// var_dump($product);
+				// echo "\n---------------------------\n";
+				// $output = ob_get_clean();
+				// file_put_contents("/var/www/LoadedCommerce-To-OpenCart/orphaned-products.txt", $output, FILE_APPEND);
+
+				// $product_id = $this->Unique_Product_Models[trim($product["products_parent_id"])];
+				// echo "match: " . $this->Unique_Product_Models[trim($product["products_parent_id"])] . ":" . 
 			}
 
 			$query = "UPDATE oc_product SET image = '{$product["products_image"]}' WHERE product_id = '{$product_id}';";
