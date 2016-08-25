@@ -49,16 +49,16 @@
 	    }
 
 	    function GetProducts() {
-			$query = "SELECT *, (SELECT GROUP_CONCAT(categories_id) FROM products_to_categories WHERE products_id = products.products_id) as ProductCategories FROM products
-					JOIN products_groups
-					ON products.products_id = products_groups.products_id
-					JOIN products_description
-					ON products.products_id = products_description.products_id
-					LEFT JOIN products_attributes
-					ON products.products_id = products_attributes.products_id
-					LEFT JOIN products_options_values
-					ON products_attributes.options_values_id = products_options_values.products_options_values_id
-					ORDER BY products_parent_id ASC";
+			$query = "SELECT p1.products_id as pID, p1.products_quantity, p1.products_model, p1.products_image, p1.products_image_med, p1.products_image_lrg, p1.products_image_sm_1, p1.products_image_xl_1, p1.products_image_sm_2, p1.products_image_xl_2, p1.products_image_sm_3, p1.products_image_xl_3, p1.products_image_sm_4, p1.products_image_xl_4, p1.products_image_sm_5, p1.products_image_xl_5, p1.products_image_sm_6, p1.products_image_xl_6, p1.products_price, p1.products_cost, p1.products_msrp, p1.products_date_added, p1.products_last_modified, p1.products_date_available, p1.products_weight, p1.products_status, p1.products_tax_class_id, p1.manufacturers_id, p1.products_ordered, p1.products_parent_id, p1.products_price1, p1.products_price2, p1.products_price3, p1.products_price4, p1.products_price5, p1.products_price6, p1.products_price7, p1.products_price8, p1.products_price9, p1.products_price10, p1.products_price11, p1.products_price1_qty, p1.products_price2_qty, p1.products_price3_qty, p1.products_price4_qty, p1.products_price5_qty, p1.products_price6_qty, p1.products_price7_qty, p1.products_price8_qty, p1.products_price9_qty, p1.products_price10_qty, p1.products_price11_qty, p1.products_qty_blocks, p1.products_group_access, p1.products_nav_access, p1.sort_order, p1.vendors_id, p1.vendors_product_price, p1.vendors_prod_id, p1.vendors_prod_comments, p1.products_qty_days, p1.products_qty_years, p1.parent_model, p1.products_quantity_order_min, p1.products_strict_inventory, p1.products_text_for_madetoorder, p1.products_text_for_outofstock, p1.products_text_for_upc, p2.*, p3.*, p4.*, p5.*, (SELECT GROUP_CONCAT(categories_id) FROM products_to_categories WHERE products_id = p1.products_id) as ProductCategories FROM products as p1
+JOIN products_groups as p2
+ON p1.products_id = p2.products_id
+JOIN products_description as p3
+ON p1.products_id = p3.products_id
+LEFT JOIN products_attributes as p4
+ON p1.products_id = p4.products_id
+LEFT JOIN products_options_values as p5
+ON p4.options_values_id = p5.products_options_values_id
+ORDER BY p1.products_parent_id ASC";
 
 			$products = mysqli_query($this->dbCon, $query);
 
@@ -262,11 +262,12 @@
 				mysqli_query($this->dbCon, $query);
 			}
 	    }
-
+	    
 	    // OK this is kinda hacky but I don't want to tweak the fucking SQL query again :/
 	    function AddProduct($product) { /*just pass the whole array fsck all those arguments*/
 	    	global $Parent_Products;
 	    	global $Sub_Products;
+	    	global $icount;
 
 			// TAX RATE
 			if ($product["products_tax_class_id"] == "2") { //apply the 7% tax rate
@@ -282,40 +283,37 @@
 
 			// sanity check before adding
 			if (
-					$product["products_parent_id"] === "0" && // is parent item
-					array_search(trim($product["products_model"]), $this->Unique_Product_Models) === FALSE // hasn't already been added
+					trim($product["products_parent_id"]) === "0" ||
+					trim($product["products_parent_id"]) === NULL ||
+					trim($product["products_parent_id"]) === trim($product["products_parent_id"]) && // is parent item
+					array_key_exists(trim($product["products_id"]), $this->Unique_Product_Models) === FALSE // hasn't already been added
 				) {
+
 				mysqli_query($this->dbCon, $query);
 				// we'll need the auto-incremented insert ID for the rest of this query
 				$product_id = $this->dbCon->insert_id;
+				$product['new_product_id'] = $product_id;
 
 				// add product_id and model to array for no dupes and retrieval of parent ids
-				$this->Unique_Product_Models[trim($product["products_model"])] = //assign details of item to keyed array
-				array('new_product_id'	=> $product_id,
-					  'parent_id'		=> $product["parent_model"]);
+				$this->Unique_Product_Models[trim($product["products_model"])] = $product;
+				
 				$Parent_Products++;
 			} else {
-				if ($product["options_id"] !== "1") {
-					//make sure it's not just product options
+				if ($product["options_id"] !== "1") {//make sure it's not just product options
 					foreach ($this->Unique_Product_Models as $prod_model => $values) {
 						if (strpos($prod_model, $product["products_parent_id"]) !== FALSE) {
 							$product_id = $values["new_product_id"];
-							echo "{$product_id}->" . $product["products_parent_id"] . "->" . $prod_model . "\n";
+							break;
 						}
 					}
+
+					$product_id = "not found {$product["products_parent_id"]}\n";
+					echo $product_id;
 				} else {
 					// it's a product's options
 					$product_id = 0;
 				}
 
-				// ob_start();
-				// var_dump($product);
-				// echo "\n---------------------------\n";
-				// $output = ob_get_clean();
-				// file_put_contents("/var/www/LoadedCommerce-To-OpenCart/orphaned-products.txt", $output, FILE_APPEND);
-
-				// $product_id = $this->Unique_Product_Models[trim($product["products_parent_id"])];
-				// echo "match: " . $this->Unique_Product_Models[trim($product["products_parent_id"])] . ":" . 
 			}
 
 			$query = "UPDATE oc_product SET image = '{$product["products_image"]}' WHERE product_id = '{$product_id}';";
